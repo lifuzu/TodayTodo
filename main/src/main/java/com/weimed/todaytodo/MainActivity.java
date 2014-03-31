@@ -65,9 +65,23 @@ public class MainActivity extends Activity {
         }
         if (id == R.id.action_create) {
             Intent intent = new Intent(this, CreateActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, id);
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case(R.id.action_create): {
+                if (resultCode == Activity.RESULT_OK ) {
+                    // String todoTitle = data.getIntExtra(todo_title);
+                    PlaceholderFragment fr = (PlaceholderFragment)getFragmentManager().findFragmentById(R.id.container);
+                    fr.update();
+                }
+            }
+        }
     }
 
     /**
@@ -82,6 +96,13 @@ public class MainActivity extends Activity {
         private ListView listView;
 
         public PlaceholderFragment() {
+        }
+
+        public void update() {
+            //Toast.makeText(getActivity(),"Clicked: " + ((HashMap<String, String>)listView.getItemAtPosition(3)).get("title"), Toast.LENGTH_SHORT).show();
+            // Exec async load task
+            (new AsyncListViewLoader()).execute("http://weimed.com/todo");
+            //adapter.notifyDataSetChanged();
         }
 
         @Override
