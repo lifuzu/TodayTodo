@@ -3,6 +3,7 @@ package com.weimed.todaytodo;
 import android.app.Activity;
 import android.app.ActionBar;
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,8 +13,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -28,6 +31,8 @@ import java.util.HashMap;
 
 
 public class MainActivity extends Activity {
+
+    public final static String EXTRA_TODO_TITLE = "com.weimed.todaytodo.TITLE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +63,10 @@ public class MainActivity extends Activity {
         if (id == R.id.action_settings) {
             return true;
         }
+        if (id == R.id.action_create) {
+            Intent intent = new Intent(this, CreateActivity.class);
+            startActivity(intent);
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -83,6 +92,17 @@ public class MainActivity extends Activity {
 
             // Exec async load task
             (new AsyncListViewLoader()).execute("http://weimed.com/todo");
+
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    //Toast.makeText(getActivity(),"Clicked: " + ((HashMap<String, String>)listView.getItemAtPosition(i)).get("title"), Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(getActivity(), DisplayActivity.class);
+                    String message = ((HashMap<String, String>)listView.getItemAtPosition(i)).get("title");
+                    intent.putExtra(EXTRA_TODO_TITLE, message);
+                    startActivity(intent);
+                }
+            });
 
             return rootView;
         }
