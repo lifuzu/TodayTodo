@@ -29,11 +29,6 @@ import java.util.HashMap;
 
 public class MainActivity extends Activity {
 
-    /**
-     * Used for ListView
-     */
-    private SimpleAdapter adapter;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,55 +39,6 @@ public class MainActivity extends Activity {
                     .commit();
         }
 
-        // Exec async load task
-        (new AsyncListViewLoader()).execute("http://weimed.com/todo");
-    }
-
-    private class AsyncListViewLoader extends AsyncTask<String, Void, ArrayList<HashMap<String, String>>> {
-        @Override
-        protected ArrayList<HashMap<String, String>> doInBackground(String... urls) {
-            ArrayList<HashMap<String, String>> list = new ArrayList<HashMap<String, String>>();
-            String response = "";
-            for (String url: urls) {
-                DefaultHttpClient client = new DefaultHttpClient();
-                HttpGet httpGet = new HttpGet(url);
-                try {
-                    HttpResponse httpResponse = client.execute(httpGet);
-                    HttpEntity httpEntity = httpResponse.getEntity();
-                    response = EntityUtils.toString(httpEntity);
-                } catch (Exception e) {
-                    Log.e("log_tag", "Error in http connection" + e.toString());
-                }
-
-                try {
-                    JSONArray todos = new JSONArray(response);
-                    for (int i = 0; i < todos.length(); i++) {
-                        HashMap<String, String> map = new HashMap<String, String>();
-                        JSONObject e = todos.getJSONObject(i);
-                        map.put("id", String.valueOf(i));
-                        map.put("title", e.getString("title"));
-                        map.put("content", "content_" + String.valueOf(i));
-                        list.add(map);
-                    }
-                } catch (Exception e) {
-                    Log.e("log_tag", "Error parsing data " + e.toString());
-                }
-            }
-            return list;
-        }
-
-        @Override
-        protected void onPostExecute( ArrayList<HashMap<String, String>> result) {
-            super.onPostExecute(result);
-            adapter = new SimpleAdapter(getApplicationContext(), result, R.layout.content_main, new String[] { "title" },
-                    new int[] {R.id.text_name});
-            ListView listView = (ListView)findViewById(R.id.list_container);
-            // new PlaceholderFragment()..findViewById(R.id.list_container);
-            //ListView listView = (ListView) getFragmentManager().findFragmentById(R.id.list_container);
-            listView.setAdapter(adapter);
-            //(getFragmentManager().findFragmentById(R.id.list_container)).setAdapter(adapter);
-            adapter.notifyDataSetChanged();
-        }
     }
 
     @Override
@@ -120,6 +66,12 @@ public class MainActivity extends Activity {
      */
     public static class PlaceholderFragment extends Fragment {
 
+        /**
+         * Used to display items in adapter with ListView
+         */
+        private SimpleAdapter adapter;
+        private ListView listView;
+
         public PlaceholderFragment() {
         }
 
@@ -127,7 +79,55 @@ public class MainActivity extends Activity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            listView = (ListView) rootView.findViewById(R.id.list_container);
+
+            // Exec async load task
+            (new AsyncListViewLoader()).execute("http://weimed.com/todo");
+
             return rootView;
+        }
+
+        private class AsyncListViewLoader extends AsyncTask<String, Void, ArrayList<HashMap<String, String>>> {
+            @Override
+            protected ArrayList<HashMap<String, String>> doInBackground(String... urls) {
+                ArrayList<HashMap<String, String>> list = new ArrayList<HashMap<String, String>>();
+                String response = "";
+                for (String url: urls) {
+                    DefaultHttpClient client = new DefaultHttpClient();
+                    HttpGet httpGet = new HttpGet(url);
+                    try {
+                        HttpResponse httpResponse = client.execute(httpGet);
+                        HttpEntity httpEntity = httpResponse.getEntity();
+                        response = EntityUtils.toString(httpEntity);
+                    } catch (Exception e) {
+                        Log.e("log_tag", "Error in http connection" + e.toString());
+                    }
+
+                    try {
+                        JSONArray todos = new JSONArray(response);
+                        for (int i = 0; i < todos.length(); i++) {
+                            HashMap<String, String> map = new HashMap<String, String>();
+                            JSONObject e = todos.getJSONObject(i);
+                            map.put("id", String.valueOf(i));
+                            map.put("title", e.getString("title"));
+                            map.put("content", "content_" + String.valueOf(i));
+                            list.add(map);
+                        }
+                    } catch (Exception e) {
+                        Log.e("log_tag", "Error parsing data " + e.toString());
+                    }
+                }
+                return list;
+            }
+
+            @Override
+            protected void onPostExecute( ArrayList<HashMap<String, String>> result) {
+                super.onPostExecute(result);
+                adapter = new SimpleAdapter(getActivity(), result, R.layout.content_main, new String[] { "title" },
+                        new int[] {R.id.text_name});
+                listView.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
+            }
         }
     }
 }
