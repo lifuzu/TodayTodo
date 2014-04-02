@@ -1,7 +1,6 @@
 package com.weimed.todaytodo;
 
 import android.app.Activity;
-import android.app.ActionBar;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -12,11 +11,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.Toast;
+
+import com.weimed.lib.ConnectionDetector;
+import com.weimed.lib.CustomAlertDialog;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -34,6 +34,11 @@ public class MainActivity extends Activity {
 
     public final static String EXTRA_TODO_TITLE = "com.weimed.todaytodo.TITLE";
 
+    // Internet connection status
+    Boolean isInternetConnected = false;
+    // Connection detector class
+    ConnectionDetector detector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +49,14 @@ public class MainActivity extends Activity {
                     .commit();
         }
 
+        // Create connection detector instance
+        detector = new ConnectionDetector(getApplicationContext());
+        // Get the Internet connection status
+        isInternetConnected = detector.isConnectingToInternet();
+        // Check the connection status
+        if (!isInternetConnected) {
+            CustomAlertDialog.show(MainActivity.this, "No Internet Connection", "You don't have internet connection.");
+        }
     }
 
     @Override

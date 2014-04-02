@@ -1,4 +1,4 @@
-apply plugin: 'android'
+apply plugin: 'android-library'
 
 android {
     compileSdkVersion 19
@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 19
+        targetSdkVersion 16
         versionCode 1
         versionName "1.0"
     }
@@ -19,7 +19,5 @@ android {
 }
 
 dependencies {
-    compile project(':Utils')
-    compile 'com.android.support:support-v4:19.+'
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
