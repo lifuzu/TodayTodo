@@ -33,8 +33,12 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.weimed.todaytodo.net.FeedParser;
+import com.weimed.todaytodo.net.TodoParser;
 import com.weimed.todaytodo.provider.TodoContract;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -140,7 +144,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
             try {
                 Log.i(TAG, "Streaming data from network: " + location);
                 stream = downloadUrl(location);
-                updateLocalFeedData(stream, syncResult);
+                updateLocalJSONData(stream, syncResult);
                 // Makes sure that the InputStream is closed after the app is
                 // finished using it.
             } finally {
@@ -156,7 +160,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(TAG, "Error reading from network: " + e.toString());
             syncResult.stats.numIoExceptions++;
             return;
-        } catch (XmlPullParserException e) {
+        } catch (JSONException e) {
             Log.e(TAG, "Error parsing feed: " + e.toString());
             syncResult.stats.numParseExceptions++;
             return;
@@ -276,6 +280,120 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                     .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, e.link)
                     .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.published)
                     .build());
+            syncResult.stats.numInserts++;
+        }
+        Log.i(TAG, "Merge solution ready. Applying batch update");
+        mContentResolver.applyBatch(TodoContract.CONTENT_AUTHORITY, batch);
+        mContentResolver.notifyChange(
+                TodoContract.Entry.CONTENT_URI, // URI where data was modified
+                null,                           // No local observer
+                false);                         // IMPORTANT: Do not sync to network
+        // This sample doesn't support uploads, but if *your* code does, make sure you set
+        // syncToNetwork=false in the line above to prevent duplicate syncs.
+    }
+
+    /**
+     * Read JSON from an input stream, storing it into the content provider.
+     *
+     * <p>This is where incoming data is persisted, committing the results of a sync. In order to
+     * minimize (expensive) disk operations, we compare incoming data with what's already in our
+     * database, and compute a merge. Only changes (insert/update/delete) will result in a database
+     * write.
+     *
+     * <p>As an additional optimization, we use a batch operation to perform all database writes at
+     * once.
+     *
+     * <p>Merge strategy:
+     * 1. Get cursor to all items in feed<br/>
+     * 2. For each item, check if it's in the incoming data.<br/>
+     *    a. YES: Remove from "incoming" list. Check if data has mutated, if so, perform
+     *            database UPDATE.<br/>
+     *    b. NO: Schedule DELETE from database.<br/>
+     * (At this point, incoming database only contains missing items.)<br/>
+     * 3. For any items remaining in incoming list, ADD to database.
+     */
+    public void updateLocalJSONData(final InputStream stream, final SyncResult syncResult)
+            throws IOException, JSONException, RemoteException,
+            OperationApplicationException, ParseException {
+        final TodoParser todoParser = new TodoParser();
+        final ContentResolver contentResolver = getContext().getContentResolver();
+
+        Log.i(TAG, "Parsing stream as JSON Array");
+        final JSONArray entries = todoParser.parse(stream);
+        Log.i(TAG, "Parsing complete. Found " + entries.length() + " entries");
+
+
+        ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
+
+        // Build hash table of incoming entries
+        HashMap<String, JSONObject> entryMap = new HashMap<String, JSONObject>();
+        for (int i = 0; i < entries.length(); i++) {
+            JSONObject e = entries.getJSONObject(i);
+            entryMap.put(String.valueOf(i), e);
+        }
+
+        // Get list of all items
+        Log.i(TAG, "Fetching local entries for merge");
+        Uri uri = TodoContract.Entry.CONTENT_URI; // Get all entries
+        Cursor c = contentResolver.query(uri, PROJECTION, null, null, null);
+        assert c != null;
+        Log.i(TAG, "Found " + c.getCount() + " local entries. Computing merge solution...");
+
+        // Find stale data
+        int id;
+        String entryId;
+        String title;
+        String content;
+        long completed;
+        while (c.moveToNext()) {
+            syncResult.stats.numEntries++;
+            id = c.getInt(COLUMN_ID);
+            entryId = c.getString(COLUMN_ENTRY_ID);
+            title = c.getString(COLUMN_TITLE);
+            content = c.getString(COLUMN_CONTENT);
+            completed = c.getLong(COLUMN_IS_COMPLETED);
+            JSONObject match = entryMap.get(entryId);
+            if (match != null) {
+                // Entry exists. Remove from entry map to prevent insert later.
+                entryMap.remove(entryId);
+                // Check to see if the entry needs to be updated
+                // How to know update local or remote? updatedAt! which is newer, update another.
+                Uri existingUri = TodoContract.Entry.CONTENT_URI.buildUpon()
+                                              .appendPath(Integer.toString(id)).build();
+                if ((match.getString("title") != null && !match.getString("title").equals(title)) ||
+                    (match.getString("content") != null && !match.getString("content").equals(content)) ||
+                    (match.getLong("isCompleted") != completed)) {
+                    // Update existing record
+                    Log.i(TAG, "Scheduling update: " + existingUri);
+                    batch.add(ContentProviderOperation.newUpdate(existingUri)
+                         .withValue(TodoContract.Entry.COLUMN_NAME_TITLE, title)
+                         .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, content)
+                         .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, completed)
+                         .build());
+                    syncResult.stats.numUpdates++;
+                } else {
+                    Log.i(TAG, "No action: " + existingUri);
+                }
+            } else {
+                // Entry doesn't exist. Remove it from the database.
+                Uri deleteUri = TodoContract.Entry.CONTENT_URI.buildUpon()
+                                            .appendPath(Integer.toString(id)).build();
+                Log.i(TAG, "Scheduling delete: " + deleteUri);
+                batch.add(ContentProviderOperation.newDelete(deleteUri).build());
+                syncResult.stats.numDeletes++;
+            }
+        }
+        c.close();
+
+        // Add new items
+        for (JSONObject e : entryMap.values()) {
+            Log.i(TAG, "Scheduling insert: entry_id=" + e.getString("id"));
+            batch.add(ContentProviderOperation.newInsert(TodoContract.Entry.CONTENT_URI)
+                 .withValue(TodoContract.Entry.COLUMN_NAME_ENTRY_ID, e.getString("id"))
+                 .withValue(TodoContract.Entry.COLUMN_NAME_TITLE, e.getString("title"))
+                 .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, e.getString("content"))
+                 .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.getLong("isCompleted"))
+                 .build());
             syncResult.stats.numInserts++;
         }
         Log.i(TAG, "Merge solution ready. Applying batch update");
