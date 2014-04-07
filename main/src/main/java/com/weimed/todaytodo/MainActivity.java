@@ -2,6 +2,7 @@ package com.weimed.todaytodo;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -79,6 +80,9 @@ public class MainActivity extends Activity {
         if (id == R.id.action_create) {
             Intent intent = new Intent(this, CreateActivity.class);
             startActivityForResult(intent, id);
+        }
+        if (id == R.id.action_demo) {
+
         }
         return super.onOptionsItemSelected(item);
     }

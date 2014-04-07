@@ -32,14 +32,12 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.weimed.todaytodo.net.FeedParser;
 import com.weimed.todaytodo.net.TodoParser;
 import com.weimed.todaytodo.provider.TodoContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +65,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
      * URL to fetch content from during a sync.
      *
      */
-    private static final String TODO_URL = "http://android-developers.blogspot.com/atom.xml";
+    private static final String TODO_URL = "http://weimed.com/todo";
 
     /**
      * Network connection timeout, in milliseconds.
@@ -178,118 +176,6 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
             return;
         }
         Log.i(TAG, "Network synchronization complete");
-    }
-
-    /**
-     * Read XML from an input stream, storing it into the content provider.
-     *
-     * <p>This is where incoming data is persisted, committing the results of a sync. In order to
-     * minimize (expensive) disk operations, we compare incoming data with what's already in our
-     * database, and compute a merge. Only changes (insert/update/delete) will result in a database
-     * write.
-     *
-     * <p>As an additional optimization, we use a batch operation to perform all database writes at
-     * once.
-     *
-     * <p>Merge strategy:
-     * 1. Get cursor to all items in feed<br/>
-     * 2. For each item, check if it's in the incoming data.<br/>
-     *    a. YES: Remove from "incoming" list. Check if data has mutated, if so, perform
-     *            database UPDATE.<br/>
-     *    b. NO: Schedule DELETE from database.<br/>
-     * (At this point, incoming database only contains missing items.)<br/>
-     * 3. For any items remaining in incoming list, ADD to database.
-     */
-    public void updateLocalFeedData(final InputStream stream, final SyncResult syncResult)
-            throws IOException, XmlPullParserException, RemoteException,
-            OperationApplicationException, ParseException {
-        final FeedParser feedParser = new FeedParser();
-        final ContentResolver contentResolver = getContext().getContentResolver();
-
-        Log.i(TAG, "Parsing stream as Atom feed");
-        final List<FeedParser.Entry> entries = feedParser.parse(stream);
-        Log.i(TAG, "Parsing complete. Found " + entries.size() + " entries");
-
-
-        ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
-
-        // Build hash table of incoming entries
-        HashMap<String, FeedParser.Entry> entryMap = new HashMap<String, FeedParser.Entry>();
-        for (FeedParser.Entry e : entries) {
-            entryMap.put(e.id, e);
-        }
-
-        // Get list of all items
-        Log.i(TAG, "Fetching local entries for merge");
-        Uri uri = TodoContract.Entry.CONTENT_URI; // Get all entries
-        Cursor c = contentResolver.query(uri, PROJECTION, null, null, null);
-        assert c != null;
-        Log.i(TAG, "Found " + c.getCount() + " local entries. Computing merge solution...");
-
-        // Find stale data
-        int id;
-        String entryId;
-        String title;
-        String content;
-        long completed;
-        while (c.moveToNext()) {
-            syncResult.stats.numEntries++;
-            id = c.getInt(COLUMN_ID);
-            entryId = c.getString(COLUMN_ENTRY_ID);
-            title = c.getString(COLUMN_TITLE);
-            content = c.getString(COLUMN_CONTENT);
-            completed = c.getLong(COLUMN_IS_COMPLETED);
-            FeedParser.Entry match = entryMap.get(entryId);
-            if (match != null) {
-                // Entry exists. Remove from entry map to prevent insert later.
-                entryMap.remove(entryId);
-                // Check to see if the entry needs to be updated
-                Uri existingUri = TodoContract.Entry.CONTENT_URI.buildUpon()
-                        .appendPath(Integer.toString(id)).build();
-                if ((match.title != null && !match.title.equals(title)) ||
-                        (match.link != null && !match.link.equals(content)) ||
-                        (match.published != completed)) {
-                    // Update existing record
-                    Log.i(TAG, "Scheduling update: " + existingUri);
-                    batch.add(ContentProviderOperation.newUpdate(existingUri)
-                            .withValue(TodoContract.Entry.COLUMN_NAME_TITLE, title)
-                            .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, content)
-                            .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, completed)
-                            .build());
-                    syncResult.stats.numUpdates++;
-                } else {
-                    Log.i(TAG, "No action: " + existingUri);
-                }
-            } else {
-                // Entry doesn't exist. Remove it from the database.
-                Uri deleteUri = TodoContract.Entry.CONTENT_URI.buildUpon()
-                        .appendPath(Integer.toString(id)).build();
-                Log.i(TAG, "Scheduling delete: " + deleteUri);
-                batch.add(ContentProviderOperation.newDelete(deleteUri).build());
-                syncResult.stats.numDeletes++;
-            }
-        }
-        c.close();
-
-        // Add new items
-        for (FeedParser.Entry e : entryMap.values()) {
-            Log.i(TAG, "Scheduling insert: entry_id=" + e.id);
-            batch.add(ContentProviderOperation.newInsert(TodoContract.Entry.CONTENT_URI)
-                    .withValue(TodoContract.Entry.COLUMN_NAME_ENTRY_ID, e.id)
-                    .withValue(TodoContract.Entry.COLUMN_NAME_TITLE, e.title)
-                    .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, e.link)
-                    .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.published)
-                    .build());
-            syncResult.stats.numInserts++;
-        }
-        Log.i(TAG, "Merge solution ready. Applying batch update");
-        mContentResolver.applyBatch(TodoContract.CONTENT_AUTHORITY, batch);
-        mContentResolver.notifyChange(
-                TodoContract.Entry.CONTENT_URI, // URI where data was modified
-                null,                           // No local observer
-                false);                         // IMPORTANT: Do not sync to network
-        // This sample doesn't support uploads, but if *your* code does, make sure you set
-        // syncToNetwork=false in the line above to prevent duplicate syncs.
     }
 
     /**
