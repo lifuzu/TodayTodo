@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
     <!-- Required to register a SyncStatusObserver to display a "syncing..." progress indicator. -->
     <uses-permission android:name="android.permission.READ_SYNC_STATS"/>
+    <!-- Required to enable our SyncAdapter after it's created. -->
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
 
     <application
         android:allowBackup="true"
@@ -47,6 +49,22 @@
             android:enabled="true"
             android:exported="true" >
         </provider>
+
+        <!-- This implements the account we'll use as an attachment point for our SyncAdapter. Since
+        our SyncAdapter doesn't need to authenticate the current user (it just fetches a public RSS
+        feed), this account's implementation is largely empty.
+
+        It's also possible to attach a SyncAdapter to an existing account provided by another
+        package. In that case, this element could be omitted here. -->
+        <service android:name="com.weimed.common.accounts.GenericAccountService">
+            <!-- Required filter used by the system to launch our account service. -->
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <!-- This points to an XMLf ile which describes our account service. -->
+            <meta-data android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
     </application>
 
 </manifest>

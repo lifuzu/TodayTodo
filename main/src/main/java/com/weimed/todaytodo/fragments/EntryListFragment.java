@@ -150,7 +150,7 @@ public class EntryListFragment extends ListFragment
         super.onAttach(activity);
 
         // Create account, if needed
-        //SyncUtils.CreateSyncAccount(activity);
+        SyncUtils.CreateSyncAccount(activity);
     }
 
     @Override

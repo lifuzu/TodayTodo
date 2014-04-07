@@ -47,7 +47,6 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Define a sync adapter for the app.
@@ -278,7 +277,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                  .withValue(TodoContract.Entry.COLUMN_NAME_ENTRY_ID, e.getString("id"))
                  .withValue(TodoContract.Entry.COLUMN_NAME_TITLE, e.getString("title"))
                  .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, e.getString("content"))
-                 .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.getLong("isCompleted"))
+                 .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.getLong("isComplete"))
                  .build());
             syncResult.stats.numInserts++;
         }
