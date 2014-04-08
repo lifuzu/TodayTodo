@@ -8,7 +8,10 @@
         android:title="@string/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never" />
-    <item android:id="@+id/action_demo"
-        android:title="Demo"
+    <item android:id="@+id/action_create"
+        android:title="Create"
+        android:showAsAction="always" />
+    <item android:id="@+id/action_refresh"
+        android:title="@string/action_refresh"
         android:showAsAction="always" />
 </menu>

@@ -17,7 +17,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name=".EntryListActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,14 +32,14 @@
         <activity
             android:name=".DisplayActivity"
             android:label="@string/title_activity_display"
-            android:parentActivityName=".MainActivity" >
+            android:parentActivityName=".EntryListActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="MainActivity" />
+                android:value="EntryListActivity" />
         </activity>
 
         <activity
-            android:name=".EntryListActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name" >
         </activity>
 

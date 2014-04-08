@@ -13,6 +13,8 @@ import android.view.ViewGroup;
 import android.os.Build;
 import android.widget.TextView;
 
+import com.weimed.todaytodo.fragments.EntryListFragment;
+
 
 public class DisplayActivity extends Activity {
 
@@ -63,7 +65,7 @@ public class DisplayActivity extends Activity {
 
             // Get the message from the intent
             Intent intent = getActivity().getIntent();
-            String message = intent.getStringExtra(MainActivity.EXTRA_TODO_TITLE);
+            String message = intent.getStringExtra(EntryListFragment.EXTRA_TODO_TITLE);
 
             // Get the text view
             TextView textView = (TextView)rootView.findViewById(R.id.item_display);

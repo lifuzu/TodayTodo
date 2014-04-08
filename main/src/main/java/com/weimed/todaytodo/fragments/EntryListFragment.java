@@ -41,6 +41,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.weimed.common.accounts.GenericAccountService;
+import com.weimed.todaytodo.CreateActivity;
 import com.weimed.todaytodo.DisplayActivity;
 import com.weimed.todaytodo.R;
 import com.weimed.todaytodo.SyncUtils;
@@ -252,7 +253,7 @@ public class EntryListFragment extends ListFragment
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         mOptionsMenu = menu;
-        inflater.inflate(R.menu.main, menu);
+        inflater.inflate(R.menu.entrylist, menu);
     }
 
     /**
@@ -262,7 +263,7 @@ public class EntryListFragment extends ListFragment
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             // If the user clicks the "Refresh" button.
-            case R.id.action_demo:
+            case R.id.action_refresh:
                 SyncUtils.TriggerRefresh();
                 return true;
         }
@@ -311,7 +312,7 @@ public class EntryListFragment extends ListFragment
             return;
         }
 
-        final MenuItem refreshItem = mOptionsMenu.findItem(R.id.action_demo);
+        final MenuItem refreshItem = mOptionsMenu.findItem(R.id.action_refresh);
         if (refreshItem != null) {
             if (refreshing) {
                 refreshItem.setActionView(R.layout.actionbar_indeterminate_progress);
