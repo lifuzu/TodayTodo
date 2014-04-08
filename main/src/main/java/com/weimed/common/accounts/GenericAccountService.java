@@ -84,8 +84,9 @@ public class GenericAccountService extends Service {
         }
 
         @Override
-        public Bundle addAccount(AccountAuthenticatorResponse accountAuthenticatorResponse,
-                                 String s, String s2, String[] strings, Bundle bundle)
+        public Bundle addAccount(AccountAuthenticatorResponse response,
+                                 String accountType, String authTokenType,
+                                 String[] requiredFeatures, Bundle options)
                 throws NetworkErrorException {
             return null;
         }
@@ -99,7 +100,7 @@ public class GenericAccountService extends Service {
 
         @Override
         public Bundle getAuthToken(AccountAuthenticatorResponse accountAuthenticatorResponse,
-                                   Account account, String s, Bundle bundle)
+                                   Account account, String authTokenType, Bundle options)
                 throws NetworkErrorException {
             throw new UnsupportedOperationException();
         }

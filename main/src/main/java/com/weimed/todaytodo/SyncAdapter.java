@@ -229,14 +229,14 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
         String entryId;
         String title;
         String content;
-        long completed;
+        boolean completed;
         while (c.moveToNext()) {
             syncResult.stats.numEntries++;
             id = c.getInt(COLUMN_ID);
             entryId = c.getString(COLUMN_ENTRY_ID);
             title = c.getString(COLUMN_TITLE);
             content = c.getString(COLUMN_CONTENT);
-            completed = c.getLong(COLUMN_IS_COMPLETED);
+            completed = c.getInt(COLUMN_IS_COMPLETED) == 1;
             JSONObject match = entryMap.get(entryId);
             if (match != null) {
                 // Entry exists. Remove from entry map to prevent insert later.
@@ -247,7 +247,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                                               .appendPath(Integer.toString(id)).build();
                 if ((match.getString("title") != null && !match.getString("title").equals(title)) ||
                     (match.getString("content") != null && !match.getString("content").equals(content)) ||
-                    (match.getLong("isCompleted") != completed)) {
+                    (match.getBoolean("isComplete") != completed)) {
                     // Update existing record
                     Log.i(TAG, "Scheduling update: " + existingUri);
                     batch.add(ContentProviderOperation.newUpdate(existingUri)
@@ -276,8 +276,8 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
             batch.add(ContentProviderOperation.newInsert(TodoContract.Entry.CONTENT_URI)
                  .withValue(TodoContract.Entry.COLUMN_NAME_ENTRY_ID, e.getString("id"))
                  .withValue(TodoContract.Entry.COLUMN_NAME_TITLE, e.getString("title"))
-                 .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, e.getString("content"))
-                 .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.getLong("isComplete"))
+                 .withValue(TodoContract.Entry.COLUMN_NAME_CONTENT, e.isNull("content") ? "Content!": e.getString("content"))
+                 .withValue(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, e.getBoolean("isComplete"))
                  .build());
             syncResult.stats.numInserts++;
         }

@@ -27,7 +27,6 @@ import android.preference.PreferenceManager;
 
 import com.weimed.common.accounts.GenericAccountService;
 import com.weimed.todaytodo.provider.TodoContract;
-import com.weimed.todaytodo.provider.TodoContract;
 
 /**
  * Static helper methods for working with the sync framework.

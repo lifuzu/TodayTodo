@@ -50,6 +50,19 @@
             android:exported="true" >
         </provider>
 
+        <!-- This service implements our SyncAdapter. It needs to be exported, so that the system
+        sync framework can access it. -->
+        <service android:name=".SyncService"
+            android:exported="true">
+            <!-- This intent filter is required. It allows the system to launch our sync service
+            as needed. -->
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <!-- This points to a required XML file which describes our SyncAdapter. -->
+            <meta-data android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
         <!-- This implements the account we'll use as an attachment point for our SyncAdapter. Since
         our SyncAdapter doesn't need to authenticate the current user (it just fetches a public RSS
         feed), this account's implementation is largely empty.
