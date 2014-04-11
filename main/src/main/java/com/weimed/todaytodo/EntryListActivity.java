@@ -1,17 +1,9 @@
 package com.weimed.todaytodo;
 
-import android.app.Activity;
-import android.app.ListActivity;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ListView;
-
-import com.weimed.todaytodo.fragments.EntryListFragment;
 
 /**
  * Activity for holding EntryListFragment.

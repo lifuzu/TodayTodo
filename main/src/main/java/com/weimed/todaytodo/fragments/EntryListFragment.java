@@ -30,6 +30,7 @@ import android.app.ListFragment;
 import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Loader;
+import android.widget.CheckBox;
 import android.widget.SimpleCursorAdapter;
 import android.text.format.Time;
 import android.util.Log;
@@ -125,8 +126,11 @@ public class EntryListFragment extends ListFragment
      * List of Views which will be populated by Cursor data.
      */
     private static final int[] TO_FIELDS = new int[]{
-            android.R.id.text1,
-            android.R.id.text2};
+            //android.R.id.text1,
+            //android.R.id.checkbox
+            R.id.title,
+            R.id.check
+            };
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -160,7 +164,8 @@ public class EntryListFragment extends ListFragment
 
         mAdapter = new SimpleCursorAdapter(
                 getActivity(),       // Current context
-                android.R.layout.simple_list_item_activated_2,  // Layout for individual rows
+                //android.R.layout.simple_list_item_activated_2,  // Layout for individual rows
+                R.layout.fragment_entry_list,
                 null,                // Cursor
                 FROM_COLUMNS,        // Cursor columns to use
                 TO_FIELDS,           // Layout fields to use
@@ -170,10 +175,7 @@ public class EntryListFragment extends ListFragment
             @Override
             public boolean setViewValue(View view, Cursor cursor, int i) {
                 if (i == COLUMN_IS_COMPLETED) {
-                    // Convert timestamp to human-readable date
-                    Time t = new Time();
-                    t.set(cursor.getLong(i));
-                    ((TextView) view).setText(t.format("%Y-%m-%d %H:%M"));
+                    ((CheckBox) view).setChecked(cursor.getInt(i) == 1);
                     return true;
                 } else {
                     // Let SimpleCursorAdapter handle other fields automatically
@@ -184,6 +186,7 @@ public class EntryListFragment extends ListFragment
         setListAdapter(mAdapter);
         setEmptyText(getText(R.string.loading));
         getLoaderManager().initLoader(0, null, this);
+        getListView().setClickable(true);
     }
 
     @Override
@@ -284,7 +287,7 @@ public class EntryListFragment extends ListFragment
         // Get the item at the selected position, in the form of a Cursor.
         Cursor c = (Cursor) mAdapter.getItem(position);
         // Get the link to the article represented by the item.
-        String content = c.getString(COLUMN_CONTENT);
+        String content = c.getString(COLUMN_TITLE);
         if (content == null) {
             Log.e(TAG, "Attempt to launch entry with null link");
             return;
