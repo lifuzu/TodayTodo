@@ -126,8 +126,6 @@ public class EntryListFragment extends ListFragment
      * List of Views which will be populated by Cursor data.
      */
     private static final int[] TO_FIELDS = new int[]{
-            //android.R.id.text1,
-            //android.R.id.checkbox
             R.id.title,
             R.id.check
             };
@@ -164,7 +162,6 @@ public class EntryListFragment extends ListFragment
 
         mAdapter = new SimpleCursorAdapter(
                 getActivity(),       // Current context
-                //android.R.layout.simple_list_item_activated_2,  // Layout for individual rows
                 R.layout.fragment_entry_list,
                 null,                // Cursor
                 FROM_COLUMNS,        // Cursor columns to use
@@ -186,7 +183,6 @@ public class EntryListFragment extends ListFragment
         setListAdapter(mAdapter);
         setEmptyText(getText(R.string.loading));
         getLoaderManager().initLoader(0, null, this);
-        getListView().setClickable(true);
     }
 
     @Override
