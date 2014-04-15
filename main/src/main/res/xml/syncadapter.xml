@@ -19,7 +19,7 @@ limitations under the License.
               android:contentAuthority="com.weimed.todaytodo"
               android:accountType="com.weimed.todaytodo.account"
               android:userVisible="false"
-              android:supportsUploading="false"
+              android:supportsUploading="true"
               android:allowParallelSyncs="false"
               android:isAlwaysSyncable="true"
         />

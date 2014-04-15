@@ -20,6 +20,7 @@ import android.accounts.Account;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SyncStatusObserver;
 import android.database.Cursor;
@@ -40,6 +41,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.weimed.common.accounts.GenericAccountService;
 import com.weimed.todaytodo.CreateActivity;
@@ -47,6 +49,7 @@ import com.weimed.todaytodo.DisplayActivity;
 import com.weimed.todaytodo.R;
 import com.weimed.todaytodo.SyncUtils;
 import com.weimed.todaytodo.provider.TodoContract;
+import com.weimed.todaytodo.provider.TodoProvider;
 
 /**
  * List fragment containing a list of Atom entry objects (articles) stored in the local database.
@@ -79,6 +82,7 @@ public class EntryListFragment extends ListFragment
      */
     private SimpleCursorAdapter mAdapter;
 
+    private CheckBox completed;
     /**
      * Handle to a SyncObserver. The ProgressBar element is visible until the SyncObserver reports
      * that the sync is complete.
@@ -170,9 +174,23 @@ public class EntryListFragment extends ListFragment
         );
         mAdapter.setViewBinder(new SimpleCursorAdapter.ViewBinder() {
             @Override
-            public boolean setViewValue(View view, Cursor cursor, int i) {
+            public boolean setViewValue(View view, final Cursor cursor, int i) {
                 if (i == COLUMN_IS_COMPLETED) {
                     ((CheckBox) view).setChecked(cursor.getInt(i) == 1);
+                    view.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            if (((CheckBox) view).isChecked()) {
+                                ListView lv = getListView();
+                                Uri uri = Uri.parse(TodoContract.Entry.CONTENT_URI + "/"
+                                        + mAdapter.getItemId(lv.getPositionForView(view)));
+                                ContentValues values = new ContentValues();
+                                values.put(TodoContract.Entry.COLUMN_NAME_IS_COMPLETED, true);
+                                getActivity().getContentResolver().update(uri, values, null, null);
+                                //Toast.makeText(getActivity(), "hello", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
                     return true;
                 } else {
                     // Let SimpleCursorAdapter handle other fields automatically
@@ -231,7 +249,7 @@ public class EntryListFragment extends ListFragment
      */
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        mAdapter.changeCursor(cursor);
+        mAdapter.swapCursor(cursor);
     }
 
     /**
@@ -242,7 +260,7 @@ public class EntryListFragment extends ListFragment
      */
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        mAdapter.changeCursor(null);
+        mAdapter.swapCursor(null);
     }
 
     /**
